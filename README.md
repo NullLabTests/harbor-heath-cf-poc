@@ -4,7 +4,9 @@
 
 **A source-grounded, machine-checked security audit of a commerce origin headed behind Cloudflare — with the edge controls, week-one plan, and customer briefings to go live safely.**
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-6C5CE7)](LICENSE) [![Audit method](https://img.shields.io/badge/audit%20method-security--audit%20skill-0F2540)](engagement/03-why-this-method.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-6C5CE7)](LICENSE)
+[![Audit method](https://img.shields.io/badge/audit%20method-cloudflare%2Fsecurity--audit--skill-0F2540)](https://github.com/cloudflare/security-audit-skill)
+[![Skill stars](https://img.shields.io/github/stars/cloudflare/security-audit-skill)](https://github.com/cloudflare/security-audit-skill)
 [![Confirmed: 0](https://img.shields.io/badge/confirmed-0-9AA5B1)](audit/run-1/REPORT.md) [![Needs validation: 24](https://img.shields.io/badge/needs%20validation-24-F6821F)](audit/run-1/NEEDS-VALIDATION.md) [![Rejected: 1](https://img.shields.io/badge/rejected-1-FF5A5F)](audit/run-1/REPORT.md)
 [![Validators: PASS](https://img.shields.io/badge/validators-PASS-00B6A0)](engagement/08-skill-run-log.md)
 
@@ -25,6 +27,8 @@ Harbor & Heath Outdoor Co. is an EU omnichannel retailer replatforming a monolit
 - **24 needs_validation** — source-proven leads with exact unresolved facts and bounded resolution plans. **No severity is assigned to unproven leads.**
 - **1 rejected** — an independent verifier refuted the admin-cookie CSRF claim (browser SameSite=Lax blocks the POST sinks).
 - Both schema validators pass: **25 findings / 27 coverage units**. Run is **complete** with a disclosed verification scope.
+
+**Method:** this audit ran Cloudflare's open-source [`security-audit-skill`](https://github.com/cloudflare/security-audit-skill) (MIT, 13k+ stars) in FULL AUDIT MODE — the six-phase pipeline (recon → coverage-led hunting → candidate validation → structured output → independent verification → reporting) whose artifacts and validators you find in `audit/run-1/` and whose customer explanation lives in [`engagement/03-why-this-method.md`](engagement/03-why-this-method.md).
 
 <div align="center">
   <img src="assets/architecture.svg" alt="Users, partners, providers flow through the Cloudflare edge into admin/hooks/api/media/www planes and the hidden origin" width="820"/>

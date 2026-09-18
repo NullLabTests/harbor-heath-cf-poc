@@ -3,6 +3,8 @@
 **Engagement:** Harbor & Heath Outdoor Co. — Cloudflare origin-readiness POC
 **Audit run:** `harbor-heath-run-1`
 
+> **Method attribution:** the procedure this document explains is Cloudflare's open-sourced [`security-audit-skill`](https://github.com/cloudflare/security-audit-skill) (MIT; github.com/cloudflare/security-audit-skill), executed in FULL AUDIT MODE via the installed copy at `~/.agents/skills/security-audit`. Phase names, verdicts, schemas, and validators below are that skill's, verbatim.
+
 This file is the customer explanation of the tool: why a generic "find vulns in this repo" prompt is the wrong input to an edge-control design, what the method actually did phase by phase in *this* run, who the agents were, and how to read the results. It is meant to be underlined by a security lead when briefing leadership.
 
 ---

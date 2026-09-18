@@ -11,7 +11,8 @@ This reconstructs the actual run for reproducibility and an additive second run.
 
 | Field | Value |
 |---|---|
-| Skill implementation | `~/.agents/skills/security-audit` (and mirrored at `/home/illy/.agents/skills/security-audit`) |
+| Skill implementation | Cloudflare's open-source **`cloudflare/security-audit-skill`** (MIT), installed at `~/.agents/skills/security-audit` — file-for-file identical to upstream `skills/security-audit/` (verified against `main`, commit `c1c8a8c14710` "Clarify guidance and full audit modes", ~13.5k stars) |
+| Skill mode | FULL AUDIT MODE (the customer-brief variant of the skill) |
 | Skill files used | `SKILL.md`, `RECONNAISSANCE.md`, `HUNTING.md`, `ATTACK-CLASSES.md` + companion class files, `VALIDATION-AND-REPORTING.md`, `report-schema.json`, `validate-coverage-ledger.cjs`, `validate-findings.cjs` |
 | Output dir (skill artifacts) | `/home/illy/workspaces/harbor-heath-cf-poc/audit/run-1` |
 | Deliverable repo | `/home/illy/workspaces/harbor-heath-cf-poc` |
