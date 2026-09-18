@@ -1,0 +1,50 @@
+{
+  "run_id": "harbor-heath-run-1",
+  "repo": "evershop",
+  "target": "/home/illy/workspaces/harbor-heath-origin/evershop",
+  "source_ref": "18e02022631c1c9dba1b6e5ac734ae27b54632cb",
+  "worktree_dirty": false,
+  "profile": "standard",
+  "scope_paths": [
+    "packages/evershop/src",
+    "packages/postgres-query-builder",
+    "packages/create-evershop-app",
+    "Dockerfile",
+    "docker-compose.yml",
+    "docker",
+    "package.json",
+    "package-lock.json"
+  ],
+  "budget": null,
+  "execution_policy": "sandboxed-source-and-local-only",
+  "selected_companion_files": [
+    "WEB-PROTOCOL-AND-AUTH.md",
+    "CLIENT-SIDE.md",
+    "SUPPLY-CHAIN-AND-RELEASE.md",
+    "CLOUD-AND-DEPLOYMENT.md",
+    "PROTOCOLS-RPC-AND-MESSAGING.md",
+    "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md",
+    "DATA-ISOLATION-AND-LIFECYCLE.md"
+  ],
+  "prior_run_paths": [],
+  "sandbox_available": false,
+  "execution_note": "No OS-enforced sandbox (no external-network isolation, no sanitized empty env, no resource-limit enforcement, no descriptor-based promotion tooling) is available in this environment. Per SKILL.md Universal execution safety, target-controlled builds/tests/browsers/fixtures will NOT be executed. Bounded local execution evidence is unavailable; candidates that would need a runtime result are recorded as needs_validation with the exact unresolved fact. Verification scope (client-approved, disclosed): fresh independent Phase 5 verifiers were applied to the six highest-value records (5 needs_validation retained, base-admin.session-cookie-csrf rejected with reason); all verdicts, exact blockers, and validation plans are recorded in findings.json / needs-validation docs. The separate coverage-critic snapshot did not run before an interrupted handoff; REPORT.md makes no clean-coverage claim.",
+  "verifiers_dispatched": [
+    "verifier-checkout-idor",
+    "verifier-order-idor",
+    "verifier-stripe-mint",
+    "verifier-stripe-webhook",
+    "verifier-admin-csrf",
+    "verifier-cookie-secret"
+  ],
+  "shared_file_owners": {
+    "run-metadata.json": "parent",
+    "architecture.md": "parent",
+    "coverage-ledger.json": "parent",
+    "findings.json": "parent",
+    "REPORT.md": "parent",
+    "FINDINGS-DETAIL.md": "parent",
+    "NEEDS-VALIDATION.md": "parent"
+  },
+  "run_status": "complete"
+}

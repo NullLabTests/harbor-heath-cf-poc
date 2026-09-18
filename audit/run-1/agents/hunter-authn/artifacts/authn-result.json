@@ -1,0 +1,452 @@
+{
+  "units": [
+    {
+      "unit_id": 1,
+      "surface": "packages/evershop/src/bin/lib/addDefaultMiddlewareFuncs.ts#sessionMiddleware",
+      "boundary": "packages/evershop/src/modules/auth/services/getCookieSecret.ts#getCookieSecret",
+      "subsystem": "base",
+      "attack_class": "WEB-PROTOCOL-AND-AUTH.md#Cookie scope and transport",
+      "coverage": "full",
+      "checks": [
+        {
+          "verdict": "needs_validation",
+          "title": "Session cookie-sigining secret falls back to the public constant 'keyboard cat'",
+          "overview": "getCookieSecret() returns getConfig('system.session.cookieSecret', 'keyboard cat'); the shipped configExample.text (line 31) ALSO ships \"cookieSecret\": \"keyboard cat\". The SAME secret seeds both the two express-session middlewares (admin cookie 'asid', frontstore 'sid') and the app-wide cookieParser. Any deployment keeping the default has zero cookie-integrity protection (attacker can sign cookies for any chosen sid).",
+          "source_locations": [
+            "packages/evershop/src/modules/auth/services/getCookieSecret.ts:3-4",
+            "packages/evershop/src/bin/lib/addDefaultMiddlewareFuncs.ts:69,77,101",
+            "configExample.text:27-31"
+          ],
+          "note": "Practical exploitation requires a cookie-injection/delivery vector plus a real victim session; see candidate 1."
+        },
+        {
+          "verdict": "passed",
+          "title": "Separate JWT secrets are fail-closed (no default), cookie names are configurable",
+          "overview": "JWT secrets read only from env and throw when missing (jwt.ts), so a default install is fail-closed for the JWT API paths.",
+          "source_locations": ["packages/evershop/src/lib/util/jwt.ts:19-29,71-73,102-104,144-146,176-178"]
+        },
+        {
+          "verdict": "note",
+          "title": "setSessionConfig/getSessionConfig is dead code",
+          "overview": "getSessionConfig.ts is self-referencing only; the effective session config is the inline sess object in addDefaultMiddlewareFuncs.ts (resave:false, saveUninitialized defaults TRUE when config key absent, cookie.maxAge 24h default).",
+          "source_locations": [
+            "packages/evershop/src/modules/auth/services/getSessionConfig.ts:6",
+            "packages/evershop/src/bin/lib/addDefaultMiddlewareFuncs.ts:70-83,90-98"
+          ]
+        },
+        {
+          "verdict": "note",
+          "title": "Secret does not distinguish admin vs storefront cookies; cookie scopes are host-only (no explicit domain)",
+          "overview": "A single secret signs admin ('asid') and storefront ('sid') cookies as well as all cookie-parser-signed cookies. Domain attribute is left to the host (no wildcard), so subdomain sharing is not implicitly granted.",
+          "source_locations": [
+            "packages/evershop/src/bin/lib/addDefaultMiddlewareFuncs.ts:69,90-102"
+          ]
+        }
+      ]
+    },
+    {
+      "unit_id": 2,
+      "surface": "packages/evershop/src/modules/auth/api",
+      "boundary": "packages/evershop/src/lib/util/jwt.ts#jwtSignAndVerify",
+      "subsystem": "auth",
+      "attack_class": "WEB-PROTOCOL-AND-AUTH.md#JWT verification and claim binding",
+      "coverage": "full",
+      "checks": [
+        {
+          "verdict": "needs_validation",
+          "title": "Admin/customer access tokens are honored WITHOUT a DB status re-check; disabled accounts keep API access until expiry",
+          "overview": "jwtUserAuth/jwtCustomerAuth set request.locals.user/locals.customer from decoded JWT claims (no status=1 check, no jti/version), while the session path re-reads the DB row. The admin API gate trusts locals.user. So a status=0 (disabled/suspended) admin or customer keeps full API/JWT access until token expiry (defaults 900s admin / 1800s customer), and disable/password-change does not invalidate outstanding tokens.",
+          "source_locations": [
+            "packages/evershop/src/modules/auth/api/global/[context]jwtUserAuth[getCurrentUser].ts",
+            "packages/evershop/src/modules/customer/api/global/[context]jwtCustomerAuth[getCurrentCustomer].ts",
+            "packages/evershop/src/modules/auth/api/global/[getCurrentUser]auth.ts:15,23-50",
+            "packages/evershop/src/lib/util/jwt.ts:98-131"
+          ],
+          "note": "Cross-hunt: account life-cycle gaps (deactivation/disable-password flows) live in the membership/customer hunt."
+        },
+        {
+          "verdict": "needs_validation",
+          "title": "Refresh tokens are long-lived, single-secret, never rotated, never revoked, not bound to a session/access token",
+          "overview": "generateRefreshToken has no jti/family/kid/session anchor; verifyRefreshToken only checks sig/iss/aud/tokenType/tokenKind. Refresh endpoints mint a NEW access token only; the old refresh token stays valid and is replayable until expiry (admin 54000s=15h, customer 108000s=30h) and survives password changes. A leaked refresh token continuously mints access tokens.",
+          "source_locations": [
+            "packages/evershop/src/lib/util/jwt.ts:136-205",
+            "packages/evershop/src/modules/auth/api/refreshUserToken/refreshToken.ts",
+            "packages/evershop/src/modules/customer/api/refreshCustomerToken/refreshToken.ts",
+            "packages/evershop/src/modules/auth/api/sessionTokens/sessionTokens.ts"
+          ],
+          "note": "sessionTokens.ts converts an admin session cookie into a JWT pair (mint) - makes the fixation/fixation-adjacent chains more impactful."
+        },
+        {
+          "verdict": "passed",
+          "title": "Token kind/type separation, per-type secrets, issuer+audience binding, and algorithm defaults",
+          "overview": "Access vs refresh use separate env secrets; tokenType/tokenKind claims are re-verified after jwt.verify; audience binds tokenType; issuer defaults 'evershop'; jsonwebtoken@9 defaults to the HS family (no old alg-confusion vector). decodeToken() without verification is only used for a coarse pre-check.",
+          "source_locations": [
+            "packages/evershop/src/lib/util/jwt.ts:1-49,62-93,98-131,136-217",
+            "package-lock.json (jsonwebtoken 9.x)"
+          ]
+        }
+      ]
+    },
+    {
+      "unit_id": 3,
+      "surface": "packages/evershop/src/modules/auth/pages/admin",
+      "boundary": "packages/evershop/src/modules/auth/services/loginUserWithEmail.ts#loginSessionSet",
+      "subsystem": "auth",
+      "attack_class": "WEB-PROTOCOL-AND-AUTH.md#Session fixation and invalidation",
+      "coverage": "full",
+      "checks": [
+        {
+          "verdict": "needs_validation",
+          "title": "Admin login never rotates the session ID and logout never destroys the session",
+          "overview": "loginUserWithEmail sets session.userID on the pre-existing (possibly anonymous) session with NO session.regenerate(); logoutUser only sets userID=undefined (no destroy()/regenerate()); customer login/logout identical. Combined with deprecated CookieParser-based signing secret (unit 1) and the login endpoints returning the raw sid in the response body, the session lifecycle is fixation/hijack-friendly. session.save() is called after login/logout (bootstrap).",
+          "source_locations": [
+            "packages/evershop/src/modules/auth/services/loginUserWithEmail.ts",
+            "packages/evershop/src/modules/auth/services/logoutUser.ts",
+            "packages/evershop/src/modules/customer/services/loginCustomerWithEmail.ts",
+            "packages/evershop/src/bin/lib/addDefaultMiddlewareFuncs.ts:82-98",
+            "packages/evershop/src/modules/auth/bootstrap.ts"
+          ],
+          "note": "shipped configExample sets saveUninitialized:false, so a fresh anonymous-fixation anchor requires the config key to be ABSENT or an injection vector - see candidate 2 validation plan."
+        },
+        {
+          "verdict": "note",
+          "title": "Session id is disclosed in login response bodies",
+          "overview": "adminLoginJson sets $body={data:{sid:request.sessionID}} and customerLoginJson {data:{sid}}; the page response middleware sends $body straight to the client.",
+          "source_locations": [
+            "packages/evershop/src/modules/auth/pages/admin/adminLoginJson/[bodyParser]logIn.js",
+            "packages/evershop/src/modules/customer/pages/frontStore/customerLoginJson/[bodyParser]login.ts:29-34",
+            "packages/evershop/src/modules/base/pages/global/response[errorHandler].ts"
+          ]
+        },
+        {
+          "verdict": "passed",
+          "title": "Admin page auth re-reads the admin_user row (status=1) on every page request",
+          "overview": "pages/admin/all/[context]auth.js loads the user by session.userID with status=1 and logs out on mismatch; distinct from the JWT-only API path.",
+          "source_locations": ["packages/evershop/src/modules/auth/pages/admin/all/[context]auth.js"]
+        },
+        {
+          "verdict": "note",
+          "title": "Logout endpoints are also exposed via GET (CSRF-/self-reprogramming observable)",
+          "overview": "adminLogoutJson route allows GET+POST with no CSRF token, no SameSite cookie, and logout does not destroy the SID.",
+          "source_locations": [
+            "packages/evershop/src/modules/auth/pages/admin/adminLogoutJson/route.json",
+            "packages/evershop/src/modules/auth/pages/admin/adminLogoutJson/logout.js"
+          ]
+        }
+      ]
+    },
+    {
+      "unit_id": 4,
+      "surface": "packages/evershop/src/modules/auth/pages/admin",
+      "boundary": "packages/evershop/src/modules/auth/services/loginUserWithEmail.ts#loginUserWithEmail",
+      "subsystem": "auth",
+      "attack_class": "ATTACK-CLASSES.md#Access control",
+      "coverage": "full",
+      "checks": [
+        {
+          "verdict": "needs_validation",
+          "title": "Credential JWT-mint/refresh endpoints are NOT classified 'auth' - per-IP guess budget gap vs the login endpoints",
+          "overview": "POST /api/user/tokens, /api/user/token/refresh, /api/customer/tokens, /api/customer/token/refresh perform the SAME email+bcrypt(password) credential check as /admin/user/login and /customer/login, but AUTH_POST_PATHS only covers the latter => these get the 'api' tier (120/60s) instead of the 'auth' tier (8/15min), an ~22.5x higher per-IP allowlisted attempt rate. Unit tests assert only the two login routes. In-memory per-IP store; distributed-IP guessing is unbounded.",
+          "source_locations": [
+            "packages/evershop/src/modules/base/services/rateLimit.ts",
+            "packages/evershop/src/modules/auth/api/getUserToken/*",
+            "packages/evershop/src/modules/auth/api/refreshUserToken/*",
+            "packages/evershop/src/modules/customer/api/getCustomerToken/*",
+            "packages/evershop/src/modules/customer/api/refreshCustomerToken/*",
+            "packages/evershop/src/modules/base/tests/unit/rateLimit.test.ts"
+          ],
+          "note": "Rated needs_validation solely because actual account-compromise outcome needs runtime observation; the tier classification itself is source-confirmed."
+        },
+        {
+          "verdict": "passed",
+          "title": "Non-public admin API routes are gated (401 unless locals.user) with route-membership role check",
+          "overview": "Only routes with access==='public' skip the admin API gate; missing access = private at runtime. Roles default '*' and else check route id membership. Notably /api/user/session/tokens is private.",
+          "source_locations": [
+            "packages/evershop/src/modules/auth/api/global/[getCurrentUser]auth.ts:14-51",
+            "packages/evershop/src/modules/auth/api/sessionTokens/route.json",
+            "packages/evershop/src/lib/router/registerAdminRoute.js"
+          ]
+        },
+        {
+          "verdict": "needs_validation",
+          "title": "Login email lookup uses ILIKE with only '%' escaped (not '_')",
+          "overview": "loginUserWithEmail/loginCustomerWithEmail replace only '%' before the ILIKE compare, so '_' behaves as a single-char wildcard, breaking exact email matching. Exploitability is limited (the attacker still needs the matched account's password) but matching semantics are wrong.",
+          "source_locations": [
+            "packages/evershop/src/modules/auth/services/loginUserWithEmail.ts",
+            "packages/evershop/src/modules/customer/services/loginCustomerWithEmail.ts"
+          ]
+        },
+        {
+          "verdict": "passed",
+          "title": "Login error handling does not disclose account existence",
+          "overview": "Generic 'Invalid email or password' message; reset endpoint and login do not leak account state (identical 200/401 responses). JWT responses fail-closed when secrets unset.",
+          "source_locations": [
+            "packages/evershop/src/modules/auth/pages/admin/adminLoginJson/[bodyParser]logIn.js",
+            "packages/evershop/src/modules/customer/pages/frontStore/customerLoginJson/[bodyParser]login.ts:17-37"
+          ]
+        }
+      ]
+    },
+    {
+      "unit_id": 5,
+      "surface": "packages/evershop/src/modules/customer/api",
+      "boundary": "packages/evershop/src/modules/customer/api/resetPassword/[bodyParser]resetPassword.ts#resetPasswordToken",
+      "subsystem": "customer",
+      "attack_class": "WEB-PROTOCOL-AND-AUTH.md#Password reset and broader recovery",
+      "coverage": "full",
+      "checks": [
+        {
+          "verdict": "needs_validation",
+          "title": "Reset token is delivered and consumed as a URL query parameter; exposed to Referer/history/logs and rendered into the DOM",
+          "overview": "The reset link embeds the 128-hex token as ?token= in the email; the reset page reads it from window.location.search and puts it in a hidden form input. The app sets no Referrer-Policy, so a same-tab click on any external link while on that page sends Referer incl. the token to that origin; browser history/proxies/access-logs also see it. Token remains valid (single-use 48h) until used.",
+          "source_locations": [
+            "packages/evershop/src/modules/customer/api/resetPassword/[bodyParser]resetPassword.ts",
+            "packages/evershop/src/modules/customer/services/sendResetPasswordEmail.ts",
+            "packages/evershop/src/modules/customer/pages/frontStore/resetPasswordPage/ResetPasswordPage.tsx:145-155",
+            "packages/evershop/src/modules/customer/api/updatePassword/[bodyParser]updatePassword.js"
+          ],
+          "note": "Coverage-block gate: exploit chain needs a browser/tab behavior and deployment headers; hence needs_validation."
+        },
+        {
+          "verdict": "passed",
+          "title": "Token entropy, hashing, single-use, expiry, and timezone handling are sound",
+          "overview": "64 random bytes (128 hex), stored sha256-hashed, deleted after use, default 48h lifetime enforced on created_at. The naive 'YYYY-MM-DD HH:mm:ss' literal is compared in the DB session whose TZ is set to shop.timezone (connection.ts onConnect), so no offset drift. Generic 200 response for unknown emails; link base from config/env (no Host-header injection).",
+          "source_locations": [
+            "packages/evershop/src/modules/customer/api/resetPassword/[bodyParser]resetPassword.ts",
+            "packages/evershop/src/modules/customer/api/updatePassword/[bodyParser]updatePassword.js",
+            "packages/evershop/src/lib/postgres/connection.ts:63-66",
+            "packages/evershop/src/lib/router/buildAbsoluteUrl.js",
+            "packages/evershop/src/modules/customer/migration/Version-1.0.2.js"
+          ]
+        },
+        {
+          "verdict": "note",
+          "title": "Reset email is also sent to addresses with no account (token not persisted => unusable)",
+          "overview": "sendResetPasswordEmail is invoked for non-existent customers with a token that is never inserted; harmless but grants a mail-based oracle for enumerating registered emails per-RATE-LIMIT.",
+          "source_locations": ["packages/evershop/src/modules/customer/api/resetPassword/[bodyParser]resetPassword.ts"]
+        },
+        {
+          "verdict": "note",
+          "title": "Password change does not invalidate existing sessions or JWTs",
+          "overview": "updatePassword updates the customer password only; outstanding session cookies and JWT pairs stay valid (ties to units 2/3 invalidation findings).",
+          "source_locations": [
+            "packages/evershop/src/modules/customer/services/customer/updatePassword.ts",
+            "packages/evershop/src/modules/customer/api/updatePassword/[bodyParser]updatePassword.js"
+          ]
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "fingerprint": "evershop-auth-cookie-secret-static-default",
+      "title": "Default/shared cookie-signing secret 'keyboard cat' enables full cookie-integrity forgery on default and example configs",
+      "unit": "1 (auth)",
+      "verdict": "needs_validation",
+      "category": "weak-secret",
+      "overview": "The session cookie signing secret (admin 'asid' + storefront 'sid' express-session middlewares AND app-wide cookieParser) defaults to the public constant 'keyboard cat', and the shipped configExample.text pins it. Anyone who knows the default can forge signed cookies for any chosen sid; zero integrity protection whenever the default is kept.",
+      "attack_path": "Preconditions: (i) deployment keeps getConfig default or ships the example; (ii) an attacker-controlled origin can plant a cookie on the store host (XSS on the store origin, or subdomain/domain-wildcard cookie write). Steps: sign s:<target_sid>.<hmac> with 'keyboard cat'; deliver as the victim's asid/sid cookie; victim authenticates into the attacker-chosen session (with unit-3 non-rotation enabling fixation), or the attacker steals a fresh sid (unit-3 body disclosure) cross-origin.",
+      "source_locations": [
+        "packages/evershop/src/modules/auth/services/getCookieSecret.ts:3-4",
+        "packages/evershop/src/bin/lib/addDefaultMiddlewareFuncs.ts:69,77,90-101",
+        "configExample.text:31"
+      ],
+      "boundary_reference": "auth::getCookieSecret::base::WEB-PROTOCOL-AND-AUTH.md#Cookie scope and transport",
+      "validation_plan": "LOCAL: boot with default config (no system.session.cookieSecret, no env), do a POST /user/tokens with a pre-signed cookie, confirm express-session stores data under the attacker-supplied sid and cookieParser accepts the HMAC. OWNER: confirm the configured cookieSecret is not the shipped/default value; confirm no off-origin cookie write path exists on the store domains (subdomains)."
+    },
+    {
+      "fingerprint": "evershop-auth-session-lifecycle-no-invalidation",
+      "title": "Session ID is never rotated on login and never destroyed on logout; raw sid is returned in login bodies",
+      "unit": "3 (auth)",
+      "verdict": "needs_validation",
+      "category": "session-fixation-and-invalidation",
+      "overview": "loginUserWithEmail/loginCustomerWithEmail write userID/customerID into the existing session without session.regenerate(); logoutUser only clears the property (no destroy). adminLoginJson and customerLoginJson return request.sessionID in the response body. saveUninitialized defaults TRUE unless the config key explicitly unset it.",
+      "attack_path": "Fixation/hijack chain: obtain/fix a real sid (attacker's own login response, or a victim session observed via unit-1 forged cookie or body disclosure), have the victim authenticate into that sid, then use the shared/known secret or the captured sid to replay the authenticated session. Session remains usable as an anonymous sid after logout (no destroy).",
+      "source_locations": [
+        "packages/evershop/src/modules/auth/services/loginUserWithEmail.ts",
+        "packages/evershop/src/modules/auth/services/logoutUser.ts",
+        "packages/evershop/src/modules/customer/services/loginCustomerWithEmail.ts",
+        "packages/evershop/src/modules/auth/pages/admin/adminLoginJson/[bodyParser]logIn.js",
+        "packages/evershop/src/modules/customer/pages/frontStore/customerLoginJson/[bodyParser]login.ts:29-34",
+        "packages/evershop/src/modules/auth/bootstrap.ts"
+      ],
+      "boundary_reference": "auth::loginSessionSet::auth::WEB-PROTOCOL-AND-AUTH.md#Session fixation and invalidation",
+      "validation_plan": "LOCAL: (a) GET a page to obtain an uninitialized sid, verify express-session accepts a cookie proposing that sid and saves the login under it (regenerate is absent); (b) logout and confirm the same sid still exists in the session table and is accepted for a subsequent anonymous request; (c) capture the sid from a login JSON body. OWNER: verify cookie injection/planting path (needs XSS cross-hunt) and whether saveUninitialized is set in the deployed config."
+    },
+    {
+      "fingerprint": "evershop-auth-jwt-access-no-account-recheck",
+      "title": "API access tokens are honored after account disable/deletion and password change (no DB status re-check, no revocation)",
+      "unit": "2 (auth)",
+      "verdict": "needs_validation",
+      "category": "claim-binding",
+      "overview": "The admin/customer JWT middlewares set locals.user/locals.customer directly from decoded claims - no status=1 re-read - so the gating API pillar trusts stale claims for the whole access-token lifetime (900s admin / 1800s customer). Password changes and admin deactivation do not invalidate in-flight tokens (no jti/version/revocation store).",
+      "attack_path": "Requires the attacker to hold a legitimate access token at the moment the account is disabled or the password changes (or a stolen token within its TTL): the token keeps granting API/JWT access until natural expiry even though the account is disabled.",
+      "source_locations": [
+        "packages/evershop/src/modules/auth/api/global/[context]jwtUserAuth[getCurrentUser].ts",
+        "packages/evershop/src/modules/customer/api/global/[context]jwtCustomerAuth[getCurrentCustomer].ts",
+        "packages/evershop/src/modules/auth/api/global/[getCurrentUser]auth.ts:15-50",
+        "packages/evershop/src/lib/util/jwt.ts:80-131"
+      ],
+      "boundary_reference": "auth::jwtSignAndVerify::auth::WEB-PROTOCOL-AND-AUTH.md#JWT verification and claim binding",
+      "validation_plan": "LOCAL: mint an admin token, switch the admin_user row to status=0, call a private admin API with the token and observe it still returns 200 (vs 401 on the session path). OWNER: confirm account lifecycle (disable/delete) semantics with the deployment."
+    },
+    {
+      "fingerprint": "evershop-auth-jwt-refresh-no-rotation",
+      "title": "Refresh tokens have no rotation/revocation/family and survive password changes",
+      "unit": "2 (auth)",
+      "verdict": "needs_validation",
+      "category": "token-lifecycle",
+      "overview": "Refresh endpoints return a new access token only; the refresh token is unchanged and replayable until expiry (54000s admin, 108000s customer). No jti/family tracking, no on-password-change invalidation. A leaked/forged refresh token is a persistent minting backdoor. sessionTokens.ts additionally converts a session cookie into a JWT pair, widening the exposure surface.",
+      "attack_path": "Attacker obtains a refresh token (stolen token, cookie-session upgrade abuse via unit-1/3, or admin gaining customer token etc.). Sends the SAME refresh token repeatedly over 15h/30h: each call mints a fresh valid access token, giving continuous authenticated access. Survives account password changes.",
+      "source_locations": [
+        "packages/evershop/src/lib/util/jwt.ts:136-205",
+        "packages/evershop/src/modules/auth/api/refreshUserToken/refreshToken.ts",
+        "packages/evershop/src/modules/customer/api/refreshCustomerToken/refreshToken.ts",
+        "packages/evershop/src/modules/auth/api/sessionTokens/sessionTokens.ts"
+      ],
+      "boundary_reference": "auth::jwtSignAndVerify::auth::WEB-PROTOCOL-AND-AUTH.md#JWT verification and claim binding",
+      "validation_plan": "LOCAL: mint a refresh token, rotate the password via /api/customers/password (or update DB password), then call /api/user/token/refresh with the OLD token and observe it still mints an access token (expected: it works). Deploy refresh-token rotation in generator and verify a leaked token becomes a one-time use."
+    },
+    {
+      "fingerprint": "evershop-auth-jwt-mint-missing-auth-tier",
+      "title": "Credential-checking JWT-mint/refresh endpoints are exempt from the strict 'auth' rate tier",
+      "unit": "4 (auth)",
+      "verdict": "needs_validation",
+      "category": "access-control",
+      "overview": "POST /api/user/tokens, /api/user/token/refresh, /api/customer/tokens, /api/customer/token/refresh run the same email + bcrypt password check as the page login endpoints but are classified 'api' (120 req/min) instead of 'auth' (8 req/15min), an ~22.5x larger per-IP guess budget. AUTH_POST_PATHS enumerates only /customer/login, /admin/user/login, /api/customers, /api/customers/reset-password, /api/customers/password. The repo's own rate-limit unit tests only assert those page/API login paths. In-memory per-IP store; many-IP guessing is unbounded.",
+      "attack_path": "Unauthenticated attacker emits online password guesses against /api/user/tokens at up to 120/min/IP (rotating IPs removes even that ceiling), defeating the intended 8/15min anti-bruteforce invariant for admin credentials.",
+      "source_locations": [
+        "packages/evershop/src/modules/base/services/rateLimit.ts",
+        "packages/evershop/src/modules/auth/api/getUserToken/route.json",
+        "packages/evershop/src/modules/auth/api/refreshUserToken/route.json",
+        "packages/evershop/src/modules/customer/api/getCustomerToken/route.json",
+        "packages/evershop/src/modules/customer/api/refreshCustomerToken/route.json",
+        "packages/evershop/src/modules/base/tests/unit/rateLimit.test.ts"
+      ],
+      "boundary_reference": "auth::loginUserWithEmail::auth::ATTACK-CLASSES.md#Access control",
+      "validation_plan": "LOCAL: fire 20 POST /api/user/tokens with wrong passwords from one IP and confirm none returns 429 while 9th POST /admin/user/login does. Measure the differential per-IP budget. OWNER: enforce the auth tier on the JWT-mint paths and add unit tests asserting their classification."
+    },
+    {
+      "fingerprint": "evershop-auth-login-ilike-wildcard-underscore",
+      "title": "Login credential lookup escapes only '%' in the ILIKE pattern, leaving '_' as a wildcard",
+      "unit": "4 (auth)",
+      "verdict": "needs_validation",
+      "category": "access-control",
+      "overview": "loginUserWithEmail/loginCustomerWithEmail run email.replace(/%/g,'\\\\%') then ILIKE; '_' is not escaped, so emails containing '_' match other accounts whose email differs only at those positions. Impact is bounded (a matching password is still required) but exact-match semantics are violated and multi-row matches can pick the wrong account.",
+      "attack_path": "Needs the attacker to know the target account's password anyway; the wildcard surfaces a wrong-account match that can then fail or, with a coinciding common password, lock/hijack a different account.",
+      "source_locations": [
+        "packages/evershop/src/modules/auth/services/loginUserWithEmail.ts",
+        "packages/evershop/src/modules/customer/services/loginCustomerWithEmail.ts"
+      ],
+      "boundary_reference": "auth::loginUserWithEmail::auth::ATTACK-CLASSES.md#Access control",
+      "validation_plan": "LOCAL: create customers a_b@x.com and acb@x.com; attempt login with acb@x.com's password via the a_b@x.com login and observe the query matches the wrong row. Fix: escape '_' (and escape ILIKE metacharacters) in the pattern."
+    },
+    {
+      "fingerprint": "evershop-auth-reset-token-in-url",
+      "title": "Password-reset token travels and is rendered as a URL query parameter with no Referrer-Policy cap",
+      "unit": "5 (customer)",
+      "verdict": "needs_validation",
+      "category": "password-recovery",
+      "overview": "The reset email links /account/reset-password?token=<128 hex>; the page puts the token into a hidden form input and the app sends no Referrer-Policy header. While the user is on that page, any navigation to an external link sends the token via Referer; plus exposure to browser history, proxies, and access logs. Token single-use and 48h-bounded, so impact is time-boxed but the token remains usable until consumed.",
+      "attack_path": "A third party controlling any outbound link the user clicks while on the reset page (or a MITM/proxy logging the URL, or another same-origin script) obtains the reset token and, with the victim's email, resets the password (account takeover) within the 48h window.",
+      "source_locations": [
+        "packages/evershop/src/modules/customer/api/resetPassword/[bodyParser]resetPassword.ts",
+        "packages/evershop/src/modules/customer/services/sendResetPasswordEmail.ts",
+        "packages/evershop/src/modules/customer/pages/frontStore/resetPasswordPage/ResetPasswordPage.tsx:145-155",
+        "packages/evershop/src/modules/customer/api/updatePassword/[bodyParser]updatePassword.js"
+      ],
+      "boundary_reference": "auth::resetPasswordToken::customer::WEB-PROTOCOL-AND-AUTH.md#Password reset and broader recovery",
+      "validation_plan": "LOCAL: request a reset for a known email, click through to the reset page with a same-origin inspected link and confirm the token appears in the Referer header sent to an external resource and in window.location.search; measure HTML/DOM exposure. OWNER: set a strict Referrer-Policy, move token out of the URL (POST-only flow/short-lived exchange code), and verify mail-client prefetch behavior."
+    }
+  ],
+  "hardening": [
+    {
+      "title": "Session cookies miss Secure, SameSite, and (explicit) HttpOnly attributes; production code sets secure=false",
+      "unit": "1 (auth)",
+      "overview": "addDefaultMiddlewareFuncs.ts:87 forces sess.cookie.secure = false in production and no sameSite/httpOnly is declared anywhere in the request path. Without a Secure flag the session cookie is sent over HTTP whenever the store is reachable over HTTP, enabling network-position interception; absent SameSite leaves CSRF posture to browser defaults.",
+      "source_locations": ["packages/evershop/src/bin/lib/addDefaultMiddlewareFuncs.ts:78-88"],
+      "top": 1
+    },
+    {
+      "title": "Session store uses a single shared signing secret for admin+storefront cookies and cookieParser",
+      "unit": "1 (auth)",
+      "overview": "A compromise of either endpoint secret compromises all cookies on all names; consider per-scope secrets.",
+      "source_locations": ["packages/evershop/src/bin/lib/addDefaultMiddlewareFuncs.ts:69,77,101"],
+      "top": 2
+    },
+    {
+      "title": "Login/logout session lifecycle: regenerate the sid on privilege change and destroy the session on logout",
+      "unit": "3 (auth)",
+      "overview": "Add session.regenerate() before/after setting userID/customerID and session.destroy() on logout; remove the sid from login response bodies.",
+      "source_locations": [
+        "packages/evershop/src/modules/auth/services/loginUserWithEmail.ts",
+        "packages/evershop/src/modules/auth/services/logoutUser.ts",
+        "packages/evershop/src/modules/auth/pages/admin/adminLoginJson/[bodyParser]logIn.js"
+      ],
+      "top": 3
+    },
+    {
+      "title": "JWT lifecycle hardening: add jti + server-side revocation, rotate refresh tokens, and bind tokens to an account state (status) or token version",
+      "unit": "2 (auth)",
+      "overview": "Without a token version/jti the disable/delete/password-change flows cannot invalidate anything; rotation makes leaked refresh tokens one-time.",
+      "source_locations": ["packages/evershop/src/lib/util/jwt.ts:62-205"],
+      "top": 4
+    },
+    {
+      "title": "Move JWT credential-mint/refresh endpoints into the strict 'auth' rate tier (or add account lockout)",
+      "unit": "4 (auth)",
+      "overview": "Extend AUTH_POST_PATHS (or its equivalent) to /api/user/tokens, /api/user/token/refresh, /api/customer/tokens, /api/customer/token/refresh and add regression tests asserting their classification.",
+      "source_locations": ["packages/evershop/src/modules/base/services/rateLimit.ts"],
+      "top": 5
+    },
+    {
+      "title": "Escape '_' (and other ILIKE metacharacters) in the login email pattern",
+      "unit": "4 (auth)",
+      "overview": "email.replace(/%/g, '\\\\%') misses '_', which ILIKE treats as a single-char wildcard; escape both.",
+      "source_locations": [
+        "packages/evershop/src/modules/auth/services/loginUserWithEmail.ts",
+        "packages/evershop/src/modules/customer/services/loginCustomerWithEmail.ts"
+      ],
+      "top": 6
+    },
+    {
+      "title": "Password-reset token transport: avoid raw tokens in the URL (short-lived exchange code/segmented link), add Referrer-Policy, and cap reset-email volume by account",
+      "unit": "5 (customer)",
+      "overview": "Keep single-use+48h semantics but remove the query-string token from the browser URL and any external link path.",
+      "source_locations": ["packages/evershop/src/modules/customer/api/resetPassword/[bodyParser]resetPassword.ts"],
+      "top": 7
+    },
+    {
+      "title": "GET logout + no CSRF surface",
+      "unit": "3 (auth)",
+      "overview": "adminLogoutJson/customerLogoutJson are reachable via GET with no CSRF token and no SameSite cookie; restrict to POST (or enforce an anti-CSRF token). Impact is limited to force-logout (credential DoS).",
+      "source_locations": [
+        "packages/evershop/src/modules/auth/pages/admin/adminLogoutJson/route.json",
+        "packages/evershop/src/modules/customer/pages/frontStore/customerLogoutJson/route.json"
+      ],
+      "top": 8
+    }
+  ],
+  "uncovered": [
+    {
+      "title": "Cookie-injection / fixation prerequisite is an XSS or off-origin cookie-write path on the store origin(s)",
+      "why": "The session-fixation and forged-cookie candidates both require a vector to plant/replace a cookie on the victim's browser; the auth module itself provides none.",
+      "refer_to": "xss-hunter and origin-isolation hunts"
+    },
+    {
+      "title": "Cross-origin/cookie sameSite framing of admin POST actions (login/logout/session-token upgrade `/api/user/session/tokens`) depends on the deployed browser cookie policy and proxy termination (Secure flag behavior)",
+      "why": "Behavior is browser/TLS-stack dependent, not determinable from source alone.",
+      "refer_to": "post-runtime owner validation; browser Cookie behavior via deployed headers"
+    },
+    {
+      "title": "Whether the deployment overrides the default cookieSecret and JWT env secrets (with what entropies) governs the whole cookie/JWT sub-fleet",
+      "why": "Secrets quality is sack-deployment configuration, unobservable in source; the fail-closed default means some findings only bite on misconfiguration.",
+      "refer_to": "owner deployment checklist (secret entropy, rotation policy)"
+    },
+    {
+      "title": "Admin user mutation endpoints (password change, disable/delete) were not shipped in-scope for this hunt",
+      "why": "loginUserWithEmail area covered the login/creds boundary; the disable/role/change flows (if present) may live in the membership/admin-user hunt and affect candidates about token invalidation.",
+      "refer_to": "membership/admin-user module hunt"
+    }
+  ]
+}

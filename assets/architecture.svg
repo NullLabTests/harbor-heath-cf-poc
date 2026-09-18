@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="620" viewBox="0 0 1140 620">
+<rect width="1140" height="620" rx="18" fill="#0F2540"/>
+<rect x="24" y="60" width="230" height="320" rx="16" fill="#1B3350" opacity="1.0"/>
+<text x="139" y="86" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Users &amp; partners</text>
+<rect x="40" y="102" width="198" height="30" rx="8" fill="#2E8FFF" opacity="0.95"/>
+<text x="139.0" y="122" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Shoppers (storefront)</text>
+<rect x="40" y="146" width="198" height="30" rx="8" fill="#6C5CE7" opacity="0.95"/>
+<text x="139.0" y="166" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Operators (40 stores)</text>
+<rect x="40" y="190" width="198" height="30" rx="8" fill="#F6821F" opacity="0.95"/>
+<text x="139.0" y="210" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Stripe / PayPal</text>
+<rect x="40" y="234" width="198" height="30" rx="8" fill="#00B6A0" opacity="0.95"/>
+<text x="139.0" y="254" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Shipping &amp; tax feeds</text>
+<text x="139" y="366" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#C9D6E8" text-anchor="middle" letter-spacing="0">untrusted internet</text>
+<path d="M254 220 h38" stroke="#C9D6E8" stroke-width="2" marker-end="url(#a1)"/>
+<rect x="308" y="40" width="280" height="380" rx="16" fill="#1B3350" opacity="1.0"/>
+<text x="448" y="66" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Cloudflare edge</text>
+<rect x="324" y="80" width="248" height="30" rx="8" fill="#F6821F" opacity="0.95"/>
+<text x="448.0" y="100" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">DNS proxy · hide origin</text>
+<rect x="324" y="117" width="248" height="30" rx="8" fill="#F6821F" opacity="0.95"/>
+<text x="448.0" y="137" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">TLS Full (strict)</text>
+<rect x="324" y="154" width="248" height="30" rx="8" fill="#F6821F" opacity="0.95"/>
+<text x="448.0" y="174" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">WAF custom + managed</text>
+<rect x="324" y="191" width="248" height="30" rx="8" fill="#F6821F" opacity="0.95"/>
+<text x="448.0" y="211" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Rate limiting</text>
+<rect x="324" y="228" width="248" height="30" rx="8" fill="#6C5CE7" opacity="0.95"/>
+<text x="448.0" y="248" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Bot Management + Turnstile</text>
+<rect x="324" y="265" width="248" height="30" rx="8" fill="#6C5CE7" opacity="0.95"/>
+<text x="448.0" y="285" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Zero Trust Access (SSO)</text>
+<rect x="324" y="302" width="248" height="30" rx="8" fill="#2E8FFF" opacity="0.95"/>
+<text x="448.0" y="322" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Workers (headers · webhooks)</text>
+<rect x="324" y="339" width="248" height="30" rx="8" fill="#2E8FFF" opacity="0.95"/>
+<text x="448.0" y="359" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Cache Rules</text>
+<rect x="324" y="376" width="248" height="30" rx="8" fill="#2E8FFF" opacity="0.95"/>
+<text x="448.0" y="396" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">DDoS protection</text>
+<path d="M588 220 h30" stroke="#C9D6E8" stroke-width="2" marker-end="url(#a1)"/>
+<rect x="630" y="60" width="250" height="380" rx="16" fill="#1B3350" opacity="1.0"/>
+<text x="755" y="86" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Hostname planes</text>
+<rect x="646" y="102" width="218" height="30" rx="8" fill="#FF5A5F" opacity="0.95"/>
+<text x="755.0" y="122" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">admin · operator APIs</text>
+<rect x="646" y="162" width="218" height="30" rx="8" fill="#FF5A5F" opacity="0.95"/>
+<text x="755.0" y="182" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">hooks · webhooks</text>
+<rect x="646" y="222" width="218" height="30" rx="8" fill="#F6821F" opacity="0.95"/>
+<text x="755.0" y="242" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">api · checkout / login</text>
+<rect x="646" y="282" width="218" height="30" rx="8" fill="#F6821F" opacity="0.95"/>
+<text x="755.0" y="302" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">media · uploads / images</text>
+<rect x="646" y="342" width="218" height="30" rx="8" fill="#00B6A0" opacity="0.95"/>
+<text x="755.0" y="362" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">www · cacheable storefront</text>
+<text x="755" y="426" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#C9D6E8" text-anchor="middle" letter-spacing="0">sensitive vs cacheable split</text>
+<path d="M880 220 h34" stroke="#C9D6E8" stroke-width="2" marker-end="url(#a1)"/>
+<rect x="930" y="60" width="186" height="380" rx="16" fill="#1B3350" opacity="1.0"/>
+<text x="1023" y="86" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Origin (hidden)</text>
+<rect x="942" y="102" width="162" height="30" rx="8" fill="#00B6A0" opacity="0.95"/>
+<text x="1023.0" y="122" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Node 18 / Express</text>
+<rect x="942" y="158" width="162" height="30" rx="8" fill="#00B6A0" opacity="0.95"/>
+<text x="1023.0" y="178" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">PostgreSQL 15</text>
+<rect x="942" y="214" width="162" height="30" rx="8" fill="#2E8FFF" opacity="0.95"/>
+<text x="1023.0" y="234" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">cookie sessions + JWT</text>
+<rect x="942" y="270" width="162" height="30" rx="8" fill="#2E8FFF" opacity="0.95"/>
+<text x="1023.0" y="290" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">image / media stores</text>
+<rect x="942" y="326" width="162" height="30" rx="8" fill="#9AA5B1" opacity="0.95"/>
+<text x="1023.0" y="346" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">redis-less rate limits</text>
+<text x="1023" y="426" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#C9D6E8" text-anchor="middle" letter-spacing="0">allowlisted to CF IPs</text>
+<rect x="24" y="452" width="1092" height="60" rx="14" fill="#1B3350" opacity="1.0" stroke="#FF5A5F" stroke-width="1.5"/>
+<text x="570" y="480" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="0">Edge contains abuse · Origin cures defects · webhook state · secrets · races</text>
+<text x="570" y="502" font-family="'Segoe UI', 'Inter', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#C9D6E8" text-anchor="middle" letter-spacing="0">this pass: 0 confirmed · 24 source-proven leads (no severity) · 1 rejected</text>
+<defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#C9D6E8"/></marker></defs>
+</svg>

@@ -1,0 +1,11 @@
+# Python / tooling
+__pycache__/
+*.pyc
+.venv/
+.idea/
+.vscode/
+.DS_Store
+*.log
+
+# Local scratch (never commit hunter scratch content that is not part of the deliverable)
+audit/run-1/agents/*/scratch/
